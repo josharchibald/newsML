@@ -175,7 +175,7 @@ class news_data_processing():
 
     N = df[column_name].apply(len).max()
 
-    input_dir = 'news__inputs'
+    input_dir = 'news_inputs'
 
     if not os.path.exists(input_dir):
       os.makedirs(input_dir)
