@@ -180,6 +180,10 @@ class news_data_processing():
     if not os.path.exists(input_dir):
       os.makedirs(input_dir)
 
+    # Create an HDF5 file
+    with h5py.File(f'{input_dir}/{column_name}_data_input.h5', 'w'):
+      pass  # Doing nothing, just creating the file
+
     data_chunks = 0
 
     historical_corpus = \
@@ -215,12 +219,7 @@ class news_data_processing():
       else:
           X_padded = X_dense
 
-      # Create an HDF5 file
-      with h5py.File(f'{input_dir}/{column_name}_data_input.h5', 'w'):
-        pass  # Doing nothing, just creating the file
-
       with h5py.File(f'{input_dir}/{column_name}_data_input.h5', 'a') as hf:
-
         # Create a dataset in the file
         hf.create_dataset(f'{column_name}_data_{data_chunks:04}', \
                           data=X_padded)
