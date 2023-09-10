@@ -31,6 +31,10 @@ def main():
 
   end_year = 2019
 
+  jan1 = '01-01'
+
+  dec31 = '12-31'
+
   print(f'\
           The parameters that govern the creation of the inputs and the \n \
           \n \
@@ -94,13 +98,18 @@ def main():
 
   used_tickers = stock.exclude_invalid_tickers(tickers, grouped_text_data)
 
+  historical_data = stock.fetch_historical_stock_data(tickers=used_tickers, \
+                    start_date= f'{start_year}-{jan1}', \
+                    end_date=f'{end_year}-{dec31}')
+
   industry_df = stock.fetch_industry(used_tickers)
 
   grouped_stock_df = stock.group_by_industry(industry_df)
 
   performance_labels, performance_inputs = \
   stock.fetch_labels_industry_performance(stock_df=grouped_stock_df, \
-                                          news_df=grouped_keywords_data)
+                                          news_df=grouped_keywords_data, \
+                                          combined_data=historical_data)
   
   print(f'\
           The stock data has been processed. From this the important \n \

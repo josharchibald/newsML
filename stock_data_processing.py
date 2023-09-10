@@ -123,45 +123,68 @@ class stock_data_processing():
     return grouped_df
   
 
+  ''' This method takes in a start_date an end_date and a list of ticker 
+      stock symbols and gets the historical opening price data for all the 
+      stocks and combines it into a data frame which is then returned.
+      
+      Inputs: tickers (list), start_date, end_date (strs)
+      
+      Outputs: combined_data (pd data frame) '''
+  def fetch_historical_stock_data(self, tickers, start_date, end_date):
+
+    dfs = []
+
+    buffer = 10
+
+    print('Fetching historical stock data')
+
+    for ticker in tqdm(tickers):
+
+      ticker_obj = yf.Ticker(ticker)
+
+      # Convert the string to a datetime object
+      fetch_end_date = datetime.strptime(end_date, "%Y-%m-%d")
+      # add buffer days to ensure we get the data
+      fetch_end_date = fetch_end_date + timedelta(days=buffer)
+      # Convert the datetime object back to a string
+      fetch_end_date = fetch_end_date.strftime("%Y-%m-%d")
+
+      # Convert the string to a datetime object
+      fetch_start_date = datetime.strptime(start_date, "%Y-%m-%d")
+      # subtrack buffer days to ensure we get the data
+      fetch_start_date = fetch_start_date + timedelta(days=-buffer)
+      # Convert the datetime object back to a string
+      fetch_start_date = fetch_start_date.strftime("%Y-%m-%d")
+
+      # Fetch historical data between start_date and end_date
+      historical_data = ticker_obj.history(start=fetch_start_date, \
+                                         end=fetch_end_date)
+      
+      # Extract the 'Open' prices and add to the combined_data DataFrame
+      dfs.append(historical_data[['Open']].rename( \
+                                                      columns={'Open': ticker}))
+      combined_data = pd.concat(dfs, axis=1)
+
+    return combined_data
+
+  
+
   ''' This method takes in a ticker sybmbol a start_date and an end_date then 
       outputs the ratio of the price of the ticker at the end_date to the 
       price of the ticker at the start_date which is used as a metric for its 
       performance. 
       
-      Inputs: ticker, start_date, end_date (str)
+      Inputs: ticker, start_date, end_date (str), combined_data (pd data frame)
       
       Outputs: ratio (float) '''
-  def calulate_price_ratio(self, ticker, start_date, end_date):
-
-    buffer = 10
+  def calulate_price_ratio(self, ticker, start_date, end_date, combined_data):
 
     ratio = 1
 
-    # Create a Ticker object
-    ticker_obj = yf.Ticker(ticker)
-
-    # Convert the string to a datetime object
-    fetch_end_date = datetime.strptime(end_date, "%Y-%m-%d")
-    # add buffer days to ensure we get the data
-    fetch_end_date = fetch_end_date + timedelta(days=buffer)
-    # Convert the datetime object back to a string
-    fetch_end_date = fetch_end_date.strftime("%Y-%m-%d")
-
-    # Convert the string to a datetime object
-    fetch_start_date = datetime.strptime(start_date, "%Y-%m-%d")
-    # subtrack buffer days to ensure we get the data
-    fetch_start_date = fetch_start_date + timedelta(days=-buffer)
-    # Convert the datetime object back to a string
-    fetch_start_date = fetch_start_date.strftime("%Y-%m-%d")
-
-    # Fetch historical data between start_date and end_date
-    historical_data = ticker_obj.history(start=fetch_start_date, \
-                                         end=fetch_end_date)
-
     try:
         # Get the opening prices on the start and end dates
-        opening_price_start = historical_data.loc[start_date, 'Open']
-        opening_price_end = historical_data.loc[end_date, 'Open']
+        opening_price_start = combined_data.loc[start_date, ticker]
+        opening_price_end = combined_data.loc[end_date, ticker]
         
         # Calculate the percentage increase
         ratio = opening_price_end / opening_price_start
@@ -176,13 +199,13 @@ class stock_data_processing():
 
   ''' This method takes in the news_df and the stock_df and uses the dates in
       the news_df to find the performance between weeks for the industries in 
-      the stock_df which will be used as inputs and then shifted to be used
-      as labels.
+      the stock_df using the combined_data which will be used as inputs and then 
+      shifted to be used as labels.
       
-      Inputs: news_df, stock_df (pd dataframe)
+      Inputs: news_df, stock_df, combined_data (pd dataframe)
       
       Outputs: data_set_labels, past_industry_performance (list) '''
-  def fetch_labels_industry_performance(self, news_df, stock_df):
+  def fetch_labels_industry_performance(self, news_df, stock_df, combined_data):
 
     stock_inputs_directory = 'stock_inputs'
 
@@ -220,7 +243,9 @@ class stock_data_processing():
           investment += 1
 
           income += self.calulate_price_ratio(start_date=start_date, \
-                                              end_date=end_date, ticker=ticker)
+                                              end_date=end_date, \
+                                              ticker=ticker, \
+                                              combined_data=combined_data)
         
         if income > investment:
           ''' If the industry did will hence the inmcome was more than the 
@@ -265,6 +290,10 @@ def main():
 
   end_year = 2019
 
+  jan1 = '01-01'
+
+  dec31 = '12-31'
+
   news = news_data_processing.news_data_processing()
 
   text_df, keywords_df = news.collect_news_data(start_year=start_year, \
@@ -282,13 +311,18 @@ def main():
 
   used_tickers = stock.exclude_invalid_tickers(tickers, grouped_text_data)
 
+  historical_data = stock.fetch_historical_stock_data(tickers=used_tickers, \
+                    start_date= f'{start_year}-{jan1}', \
+                    end_date=f'{end_year}-{dec31}')
+
   industry_df = stock.fetch_industry(used_tickers)
 
   grouped_stock_df = stock.group_by_industry(industry_df)
 
   performance_labels, performance_inputs = \
   stock.fetch_labels_industry_performance(stock_df=grouped_stock_df, \
-                                          news_df=grouped_keywords_data)
+                                          news_df=grouped_keywords_data, \
+                                          combined_data=historical_data)
 
   print(np.shape(performance_labels))
 
