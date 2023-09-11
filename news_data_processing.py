@@ -15,6 +15,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import h5py
 import os
 import sys
+import random
 
 class news_data_processing():
     
@@ -80,7 +81,8 @@ class news_data_processing():
     # Fixed length for date strings
     date_length = 10
 
-    # There's a request rate limit 10 a min
+    # There's a request rate limit 10 a min, but its iffy so theres a retry 
+    # count as well
     request_wait = 6
 
     # Months of the year to get from
@@ -90,7 +92,7 @@ class news_data_processing():
     for year in range(start_year, end_year + 1):
 
       print(f'Fetching news data for {year}')
-      
+
       for month in tqdm(range(1, months + 1)):
 
         # Fetch news and date for the specific year and month
@@ -168,12 +170,15 @@ class news_data_processing():
   
   ''' This method takes in a df and a column_name for the column the data is
       held and outputs the text data tokenized to zero padded 2D array inputs 
-      for each week.
+      for each week. This method takes in a fraction so that a random fraction
+      of the data is used for the historical vocab to limit the features per 
+      news article since if its not limited the inputs can easily fill up a
+      computers disk storage.
       
-      Inputs: df (pd data frame), column_name (str)
+      Inputs: df (pd data frame), column_name (str), fraction (float)
       
       Outputs: inputs_array (np array) '''
-  def tokenize(self, df, column_name):
+  def tokenize(self, df, column_name, fraction):
 
     N = df[column_name].apply(len).max()
 
@@ -188,8 +193,10 @@ class news_data_processing():
 
     data_chunks = 0
 
+    sampled_df = df.sample(frac=fraction, random_state=random.randint(1, 1000)) 
+
     historical_corpus = \
-    list(itertools.chain.from_iterable(df[column_name]))
+    list(itertools.chain.from_iterable(sampled_df[column_name]))
 
     vectorizer = TfidfVectorizer()
     vectorizer.fit(historical_corpus)
@@ -238,6 +245,9 @@ def main():
   weekdays = 0
   weeks = 1
 
+  # use only 50% of all data for the historical vocabulary
+  fraction = 1
+
   start_year = 2017
 
   end_year = 2017
@@ -253,10 +263,10 @@ def main():
   grouped_keywords_data = news.group_by_weekday(df=keywords_df, \
                                                 weekday=weekdays, weeks=weeks)
   
-  news.tokenize(df=grouped_text_data, column_name='text')
+  news.tokenize(df=grouped_text_data, column_name='text', fraction=fraction)
 
   news.tokenize(df=grouped_keywords_data, \
-                                  column_name='keywords')
+                                  column_name='keywords', fraction=fraction)
 
   
 if __name__ == '__main__':

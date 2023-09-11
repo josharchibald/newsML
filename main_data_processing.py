@@ -27,9 +27,13 @@ def main():
   weekdays = 0
   weeks = 1
 
-  start_year = 2017
+  # fraction of all data that is used for the tokenizing vocabulary since it can
+  # be very large on the order of ones of terabytes
+  fraction = .5
 
-  end_year = 2019
+  start_year = 2013
+
+  end_year = 2013
 
   jan1 = '01-01'
 
@@ -52,12 +56,19 @@ def main():
           between each data chunk, so basically how many weeks worth of \n \
           \n \
           data the ml has to predict with. \n \n \
+          fraction: which is a float that represents what fraction of the \n \
+          \n \
+          total news data collected will be used in the historical vocab \n \
+          \n \
+          governing how many features there will be for each article for \n \
+          \n \
+          each week. \n \n \
           start_year and end_year: which are both integers that are the \n \
           \n \
           start and end year for the data that will be trained with. \n \n \
-          These parameters are currently {weekdays}, {weeks}, {start_year}, \n \
+          These parameters are currently {weekdays}, {weeks}, {fraction}, \n \
           \n \
-          and {end_year} respectively.')
+          {start_year}, and {end_year} respectively.')
   
   print(message_separator_length *'-')
 
@@ -72,10 +83,10 @@ def main():
   grouped_keywords_data = news.group_by_weekday(df=keywords_df, \
                                                 weekday=weekdays, weeks=weeks)
   
-  news.tokenize(df=grouped_text_data, column_name='text')
+  news.tokenize(df=grouped_text_data, column_name='text', fraction=fraction)
 
   news.tokenize(df=grouped_keywords_data, \
-                                  column_name='keywords')
+                                  column_name='keywords',fraction=fraction)
   
   print(f'\
           The news data has been processed. From this the important outputs \n \
