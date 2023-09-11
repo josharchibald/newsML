@@ -14,6 +14,7 @@ import time
 from sklearn.feature_extraction.text import TfidfVectorizer
 import h5py
 import os
+import sys
 
 class news_data_processing():
     
@@ -38,22 +39,20 @@ class news_data_processing():
     base_url = 'https://api.nytimes.com/svc/archive/v1/'
     url = base_url + '/' + str(year) + '/' + str(month) + '.json?api-key=' + key
     
-    max_retries = 8
+    ''' I chose a short wait time and many tries so it gets the data asap 
+        because for some reason even with the rate limit every like 7 requests
+        it stalls for a bit '''
+    max_retries = 12
     retries = 0
-    retry_wait = 10
+    retry_wait = 3
     
     while retries < max_retries:
       try:
-        print(f'Trying to fetch news data for {year}, month {month}')
         news_data = requests.get(url).json()
 
         # Check if the 'response' key exists in news_data
         if 'response' in news_data:
-            print('Success')
             return news_data
-        
-        else:
-            print('Response key not found, retrying...')
     
       except Exception as e:
         print(f'An error occurred: {e}, retrying...')
@@ -62,7 +61,7 @@ class news_data_processing():
       time.sleep(retry_wait)
         
     print('Max retries reached, exiting.')
-    return None
+    sys.exit()
   
 
   ''' This method takes in a start_year and an end_year, it gets the news data
@@ -81,15 +80,18 @@ class news_data_processing():
     # Fixed length for date strings
     date_length = 10
 
-    # There's a request rate limit
-    request_wait = 10
+    # There's a request rate limit 10 a min
+    request_wait = 6
 
     # Months of the year to get from
     months = 12
 
     # Goes through the start year to end year one month at a time
     for year in range(start_year, end_year + 1):
-      for month in range(1, months + 1):
+
+      print(f'Fetching news data for {year}')
+      
+      for month in tqdm(range(1, months + 1)):
 
         # Fetch news and date for the specific year and month
         article_data = self.fetch_news_and_date(year=year, month=month)
