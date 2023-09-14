@@ -12,7 +12,7 @@ site:
 https://towardsdatascience.com/collecting-data-from-the-new-york-times-over-any-period-of-time-3e365504004
 
 And follow the instructions just for getting the key, then put the key, and just
-the key, in a file called api_key.txt in the same directory as this file. 
+the key, in a file called news_api_key.txt in the same directory as this file. 
 
 # Input and Label Creation
 Since this only contains the data processing right now, just run the 

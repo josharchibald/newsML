@@ -34,7 +34,7 @@ class news_data_processing():
   def fetch_news_and_date(self, year, month):
     
     ''' Put the api key and nothing else in a api_key.txt file'''
-    with open('api_key.txt', 'r') as f:
+    with open('news_api_key.txt', 'r') as f:
       key = f.read().strip()
 
     base_url = 'https://api.nytimes.com/svc/archive/v1/'
