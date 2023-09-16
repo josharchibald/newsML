@@ -29,7 +29,7 @@ def main():
 
   # fraction of all data that is used for the tokenizing vocabulary since it can
   # be very large on the order of ones of terabytes
-  fraction = .5
+  fraction = .2
 
   start_year = 2013
 

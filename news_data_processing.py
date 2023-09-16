@@ -200,8 +200,6 @@ class news_data_processing():
     list(itertools.chain.from_iterable(sampled_df[column_name]))
 
     vectorizer = TfidfVectorizer()
-    # Create and fit the scaler
-    scaler = StandardScaler()
     vectorizer.fit(historical_corpus)
     base_vocab = vectorizer.get_feature_names_out()
 
@@ -217,6 +215,9 @@ class news_data_processing():
 
       # Convert the sparse matrix to a dense numpy array
       X_dense = X.toarray()
+
+      # Create and fit the scaler
+      scaler = StandardScaler().fit(X_dense)
 
       # Apply the standard scaling
       X_dense = scaler.transform(X_dense)
