@@ -220,6 +220,9 @@ class stock_data_processing():
 
     if not os.path.exists(stock_labels_directory):
       os.makedirs(stock_labels_directory)
+
+    if not os.path.exists(stock_profit_directory):
+      os.makedirs(stock_profit_directory)
     
     ''' This is the list that will contain the performances for all the 
         weeks as 1 and 0'''
@@ -284,12 +287,28 @@ class stock_data_processing():
     data_set_profits = [past_industry_profit[1:] + \
                 [past_industry_profit[len(past_industry_profit) - 1]]]
     
-    # Compute the mean and standard deviation for each row
+    past_industry_profit = np.array(past_industry_profit)
+    
+    # Calculate row means and standard deviations
     row_means = np.mean(past_industry_profit, axis=1, keepdims=True)
     row_stds = np.std(past_industry_profit, axis=1, keepdims=True)
 
-    # Normalize each row
-    norm_past_industry_profit = (past_industry_profit - row_means) / row_stds
+    # Find where row_stds is zero
+    zero_std_rows = np.where(row_stds == 0)[0]
+
+    # Make a copy of the array for normalization
+    norm_past_industry_profit = np.zeros_like(past_industry_profit)
+
+    # Normalize only the rows where row_stds is not zero
+    non_zero_std_rows = \
+    np.setdiff1d(np.arange(past_industry_profit.shape[0]), zero_std_rows)
+
+    norm_past_industry_profit[non_zero_std_rows] = \
+      (past_industry_profit[non_zero_std_rows] - \
+       row_means[non_zero_std_rows]) / row_stds[non_zero_std_rows]
+
+    # For rows with zero std, set them as zero or some other value
+    norm_past_industry_profit[zero_std_rows] = 0
         
     data_set_profits = np.squeeze(np.array(data_set_profits))
     
@@ -312,7 +331,7 @@ class stock_data_processing():
       hf.create_dataset(f'stock_profits', \
                         data=data_set_profits)
 
-    return data_set_labels, past_industry_performance
+    return data_set_labels, norm_past_industry_profit
 
     
 def main():
