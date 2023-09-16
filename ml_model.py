@@ -1,9 +1,16 @@
+''' ml_model.py '''
+
+''' Author: Joshua Archibald September 2023 '''
+
+''' This file conatins the ml_model class which contains methods 
+    for the meachine learning model '''
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 class ml_model(nn.Module):
-    
+  ''' This method sets up all the layers for the ml model '''
   def __init__(self, num_conv_layers, num_lin_layers, activation, \
                 input_conv_channels, output_conv_channels, kernels, \
                 input_lin_channels, output_lin_channels, pool_window, \

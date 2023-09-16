@@ -200,7 +200,9 @@ class stock_data_processing():
   ''' This method takes in the news_df and the stock_df and uses the dates in
       the news_df to find the performance between weeks for the industries in 
       the stock_df using the combined_data which will be used as inputs and then 
-      shifted to be used as labels.
+      shifted to be used as labels. Updated to specifically use normalized 
+      profit for input and also a shifted version to look at what profit the
+      model would have made.
       
       Inputs: news_df, stock_df, combined_data (pd dataframe)
       
@@ -211,6 +213,8 @@ class stock_data_processing():
 
     stock_labels_directory = 'stock_labels'
 
+    stock_profit_directory = 'stock_profits'
+
     if not os.path.exists(stock_inputs_directory):
       os.makedirs(stock_inputs_directory)
 
@@ -218,14 +222,21 @@ class stock_data_processing():
       os.makedirs(stock_labels_directory)
     
     ''' This is the list that will contain the performances for all the 
-        weeks '''
+        weeks as 1 and 0'''
     past_industry_performance = []
+
+    ''' This is the list that holds the money made for each indusrty for all the 
+        weeks '''
+    past_industry_profit = []
 
     print('Creating Labels')
 
     for date_index in tqdm(range(len(news_df['adjusted_date']) - 1)):
       ''' This list will contain the performances for each individual week '''
       weekly_performance = []
+
+      ''' This list will contain the profits for each individual week '''
+      weekly_profit = []
 
       start_date = news_df['adjusted_date'].iloc[date_index]
       end_date = news_df['adjusted_date'].iloc[date_index + 1]
@@ -249,12 +260,17 @@ class stock_data_processing():
         
         if income > investment:
           ''' If the industry did will hence the inmcome was more than the 
-              investment the performance is 1 otherise -1 for that industry '''
+              investment the performance is 1 otherise 0 for that industry '''
           weekly_performance.append(1)
 
         else:
 
           weekly_performance.append(0)
+
+        ''' the profit is just the income - the investment'''
+        weekly_profit.append(income - investment)
+      
+      past_industry_profit.append(weekly_profit)
 
       past_industry_performance.append(weekly_performance)
     
@@ -263,6 +279,20 @@ class stock_data_processing():
     data_set_labels = [past_industry_performance[1:] + \
                 [past_industry_performance[len(past_industry_performance) - 1]]]
     
+    ''' These are the profits for the data and will be used to determine overall
+        performance. '''
+    data_set_profits = [past_industry_profit[1:] + \
+                [past_industry_profit[len(past_industry_profit) - 1]]]
+    
+    # Compute the mean and standard deviation for each row
+    row_means = np.mean(past_industry_profit, axis=1, keepdims=True)
+    row_stds = np.std(past_industry_profit, axis=1, keepdims=True)
+
+    # Normalize each row
+    norm_past_industry_profit = (past_industry_profit - row_means) / row_stds
+        
+    data_set_profits = np.squeeze(np.array(data_set_profits))
+    
     data_set_labels = np.squeeze(np.array(data_set_labels))
 
     past_industry_performance = np.array(past_industry_performance)
@@ -270,12 +300,17 @@ class stock_data_processing():
     with h5py.File(f'{stock_inputs_directory}/stock_inputs.h5', 'w') as hf:
       # Create a dataset in the file
       hf.create_dataset(f'stock_data_inputs', \
-                        data=past_industry_performance)
+                        data=norm_past_industry_profit)
       
     with h5py.File(f'{stock_labels_directory}/stock_labels.h5', 'w') as hf:
       # Create a dataset in the file
       hf.create_dataset(f'stock_labels', \
                         data=data_set_labels)
+      
+    with h5py.File(f'{stock_profit_directory}/stock_profits.h5', 'w') as hf:
+      # Create a dataset in the file
+      hf.create_dataset(f'stock_profits', \
+                        data=data_set_profits)
 
     return data_set_labels, past_industry_performance
 

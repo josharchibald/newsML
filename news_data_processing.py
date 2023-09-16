@@ -115,7 +115,8 @@ class news_data_processing():
           if start_year <= date_year <= end_year:
             
             # Construct the text and keywords strings
-            text = '{} {}'.format(obj['headline']['main'], obj['lead_paragraph'])
+            text = '{} {}'.format(obj['headline']['main'], \
+                                  obj['lead_paragraph'])
             keywords = ''
 
             for keyword in obj['keywords']:
@@ -125,7 +126,8 @@ class news_data_processing():
             news_text.append({'text': text, 'date': pd.Timestamp(date)})
 
             # Append the keywords and date to the list
-            news_keywords.append({'keywords': keywords, 'date': pd.Timestamp(date)})
+            news_keywords.append({'keywords': keywords, 'date': \
+                                  pd.Timestamp(date)})
 
     # Convert the lists to DataFrames
     text_df = pd.DataFrame(news_text)
