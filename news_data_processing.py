@@ -12,6 +12,7 @@ from tqdm import tqdm
 import itertools
 import time
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import StandardScaler
 import h5py
 import os
 import sys
@@ -199,6 +200,8 @@ class news_data_processing():
     list(itertools.chain.from_iterable(sampled_df[column_name]))
 
     vectorizer = TfidfVectorizer()
+    # Create and fit the scaler
+    scaler = StandardScaler()
     vectorizer.fit(historical_corpus)
     base_vocab = vectorizer.get_feature_names_out()
 
@@ -215,6 +218,9 @@ class news_data_processing():
       # Convert the sparse matrix to a dense numpy array
       X_dense = X.toarray()
 
+      # Apply the standard scaling
+      X_dense = scaler.transform(X_dense)
+
       # Get the actual number of headlines for the current week
       n = X_dense.shape[0]
 
@@ -228,10 +234,12 @@ class news_data_processing():
       else:
           X_padded = X_dense
 
+      X_flattened = X_padded.flatten()
+
       with h5py.File(f'{input_dir}/{column_name}_data_input.h5', 'a') as hf:
         # Create a dataset in the file
         hf.create_dataset(f'{column_name}_data_{data_chunks:04}', \
-                          data=X_padded)
+                          data=X_flattened)
         
       data_chunks += 1
 

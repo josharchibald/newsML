@@ -254,7 +254,7 @@ class stock_data_processing():
 
         else:
 
-          weekly_performance.append(-1)
+          weekly_performance.append(0)
 
       past_industry_performance.append(weekly_performance)
     
