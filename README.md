@@ -5,7 +5,7 @@ based on news articles.
 
 # Prerequisits 
 You will need to install these dependences:
-requests pandas numpy tqdm scikit-learn h5py yfinance
+requests pandas numpy tqdm scikit-learn h5py yfinance torch
 
 You will also need an API key for the New York Times archive API. Visit this
 site:

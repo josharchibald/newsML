@@ -59,6 +59,7 @@ class stock_data_processing():
 
       usable_tickers.append(symbol)
 
+    print('Excluding Unusable Tickers')
     for ticker in tqdm(tickers):
 
       ticker_obj = yf.Ticker(ticker)
@@ -96,7 +97,8 @@ class stock_data_processing():
 
     print('Fetching Industries')
     
-    for ticker in tqdm(tickers):
+    # skip the last three sp500 etf symbols
+    for ticker in tqdm(tickers[:-3]):
       
       ticker_obj = yf.Ticker(f'{ticker}')
 
@@ -137,6 +139,12 @@ class stock_data_processing():
     buffer = 10
 
     print('Fetching historical stock data')
+
+    # also fetch data for sp500 etfs, this change will be added to the tickers
+    # list outside of the function
+    tickers.append('SPY')
+    tickers.append('IVV')
+    tickers.append('VOO')
 
     for ticker in tqdm(tickers):
 
@@ -201,12 +209,12 @@ class stock_data_processing():
       the news_df to find the performance between weeks for the industries in 
       the stock_df using the combined_data which will be used as inputs and then 
       shifted to be used as labels. Updated to specifically use normalized 
-      profit for input and also a shifted version to look at what profit the
-      model would have made.
+      profit for input and also a shifted version to look at what percent profit 
+      the model would have made.
       
       Inputs: news_df, stock_df, combined_data (pd dataframe)
       
-      Outputs: data_set_labels, past_industry_performance (list) '''
+      Outputs: H5 files '''
   def fetch_labels_industry_performance(self, news_df, stock_df, combined_data):
 
     stock_inputs_directory = 'stock_inputs'
@@ -239,7 +247,7 @@ class stock_data_processing():
       weekly_performance = []
 
       ''' This list will contain the profits for each individual week '''
-      weekly_profit = []
+      weekly_perc_profit = []
 
       start_date = news_df['adjusted_date'].iloc[date_index]
       end_date = news_df['adjusted_date'].iloc[date_index + 1]
@@ -270,10 +278,11 @@ class stock_data_processing():
 
           weekly_performance.append(0)
 
-        ''' the profit is just the income - the investment'''
-        weekly_profit.append(income - investment)
+        ''' the percent profit is just the income - the investment over 
+            investment '''
+        weekly_perc_profit.append((income - investment) / investment)
       
-      past_industry_profit.append(weekly_profit)
+      past_industry_profit.append(weekly_perc_profit)
 
       past_industry_performance.append(weekly_performance)
     
@@ -316,6 +325,7 @@ class stock_data_processing():
 
     past_industry_performance = np.array(past_industry_performance)
 
+    # save everything to disk
     with h5py.File(f'{stock_inputs_directory}/stock_inputs.h5', 'w') as hf:
       # Create a dataset in the file
       hf.create_dataset(f'stock_data_inputs', \
@@ -330,8 +340,53 @@ class stock_data_processing():
       # Create a dataset in the file
       hf.create_dataset(f'stock_profits', \
                         data=data_set_profits)
+        
+  ''' This method takes in the news_df and the sp500 etf tickers as well as
+      the combined data with all the prices and finds the percent profit
+      of just buying the sp500 etfs to compare against the performance of the
+      model.
+      
+      Inputs: news_df, combined_data (pd data frame), sp500_tickers (list)
+       
+      Outputs: H5 files  '''
+  def fetch_sp500_performance(self, news_df, sp500_tickers, combined_data):
 
-    return data_set_labels, norm_past_industry_profit
+    sp500_profit_directory = 'sp500_profits'
+
+    if not os.path.exists(sp500_profit_directory):
+      os.makedirs(sp500_profit_directory)
+
+    past_sp500_performance = []
+
+    for date_index in tqdm(range(len(news_df['adjusted_date']) - 1)):
+
+      start_date = news_df['adjusted_date'].iloc[date_index]
+      end_date = news_df['adjusted_date'].iloc[date_index + 1]
+
+      investment = 0
+      income = 0
+
+      for ticker in sp500_tickers:
+
+        investment += 1
+
+        income += self.calulate_price_ratio(start_date=start_date, \
+                                            end_date=end_date, \
+                                            ticker=ticker, \
+                                            combined_data=combined_data)        
+
+      past_sp500_performance.append((income - investment) / investment)
+    
+    sp500_profits = [past_sp500_performance[1:] + \
+                [past_sp500_performance[len(past_sp500_performance) - 1]]]
+
+    sp500_profits = np.squeeze(np.array(sp500_profits))
+
+    # save to disk
+    with h5py.File(f'{sp500_profit_directory}/sp500_profits.h5', 'w') as hf:
+      # Create a dataset in the file
+      hf.create_dataset(f'stock_profits', \
+                        data=sp500_profits)
 
     
 def main():
@@ -373,14 +428,10 @@ def main():
 
   grouped_stock_df = stock.group_by_industry(industry_df)
 
-  performance_labels, performance_inputs = \
   stock.fetch_labels_industry_performance(stock_df=grouped_stock_df, \
                                           news_df=grouped_keywords_data, \
                                           combined_data=historical_data)
 
-  print(np.shape(performance_labels))
-
-  print(np.shape(performance_inputs))
 
 if __name__ == '__main__':
 

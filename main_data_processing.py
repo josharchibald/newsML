@@ -117,7 +117,6 @@ def main():
 
   grouped_stock_df = stock.group_by_industry(industry_df)
 
-  performance_labels, performance_inputs = \
   stock.fetch_labels_industry_performance(stock_df=grouped_stock_df, \
                                           news_df=grouped_keywords_data, \
                                           combined_data=historical_data)
@@ -125,33 +124,19 @@ def main():
   print(f'\
           The stock data has been processed. From this the important \n \
           \n \
-          outputs are the performance_inputs and the performance_labels \n \
+          outputs are the stock_inputs, stock_labels, used for inputs and \n \
           \n \
-          which are 2D np arrays. The performance_inputs are to be used as \n \
+          and labels for the ml, and then the stock_profits and the sp500 \n \
           \n \
-          inputs to the ml and the performance_labels are to be used as the \n \
+          profits which will be used for performance metrics. These are all \n \
           \n \
-          labels that the ml trains on. Their shapes are \n \
-          \n \
-          {np.shape(performance_inputs)} and {np.shape(performance_labels)} \n \
-          \n \
-          respectively. These should be the same length. The first \n \
-          \n \
-          dimension should also be the same as the first dimension of the \n \
-          \n \
-          text_inputs and the keywords_inputs as it is the number of data \n \
-          \n \
-          chunks that the ml can train on. The second dimension is the \n \
-          \n \
-          number of industries and their performances. The inputs and \n \
-          \n \
-          are stored in HDF5 files in their respective directories.')
+          stored in HDF5 files.')
   
   
   print(message_separator_length *'-')
 
   print(f'\
-          In order to access the inputs and labels you can find the HDF5 \n \
+          In order to access the inputs, labels, etc you can find the HDF5 \n \
           \n \
           files in their appropriately named directories. Then in your \n \
           \n \
