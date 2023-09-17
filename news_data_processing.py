@@ -11,6 +11,7 @@ import numpy as np
 from tqdm import tqdm
 import itertools
 import time
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 import h5py
 import os
