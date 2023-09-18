@@ -120,6 +120,11 @@ def main():
   stock.fetch_labels_industry_performance(stock_df=grouped_stock_df, \
                                           news_df=grouped_keywords_data, \
                                           combined_data=historical_data)
+  sp500_tickers = ['SPY', 'IVV', 'VOO']
+  
+  stock.fetch_sp500_performance(news_df=grouped_text_data, \
+                                sp500_tickers=sp500_tickers, \
+                                    combined_data=historical_data)
   
   print(f'\
           The stock data has been processed. From this the important \n \

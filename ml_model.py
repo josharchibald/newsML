@@ -14,7 +14,8 @@ class ml_model(nn.Module):
   def __init__(self, num_conv_layers, num_lin_layers, activation, \
                 input_conv_channels, output_conv_channels, kernels, \
                 input_lin_channels, output_lin_channels, pool_window, \
-                sequence_length, merge_size, output_size, dropout_prob):
+                sequence_length, merge_size, output_size, dropout_prob, \
+                loss_function):
     
     super(ml_model, self).__init__()
 
@@ -31,6 +32,7 @@ class ml_model(nn.Module):
     self.merge_size = merge_size
     self.output_size = output_size
     self.dropout_prob = dropout_prob
+    self.loss_function = loss_function
 
     self.conv_layers = nn.ModuleList()
     self.lin_layers = nn.ModuleList()
@@ -148,6 +150,8 @@ class ml_model(nn.Module):
           x_conv = F.gelu(x_conv)
         elif self.activation == 'mish':
           x_conv = self.mish(x_conv)
+        else:
+          raise ValueError("Invalid activation choice.")
           
       elif isinstance(layer, nn.MaxPool1d):
         x_conv = layer(x_conv)
@@ -177,6 +181,8 @@ class ml_model(nn.Module):
           x_lin = F.gelu(x_lin)
         elif self.activation == 'mish':
           x_lin = self.mish(x_lin)
+        else:
+          raise ValueError("Invalid activation choice.")
 
     # Merge the outputs of the Conv1D and Linear branches
     x_merged = torch.cat((x_conv, x_lin), dim=1)
@@ -184,6 +190,12 @@ class ml_model(nn.Module):
 
     # Final output layer
     output = self.output_layer(x_merged)
-    output = torch.sigmoid(output)  # For multi-label classification
-
+  
+    if self.loss_function == 'BCE_weighted':
+      pass
+    elif self.loss_function == 'BCE':
+      output = torch.sigmoid(output) 
+    else:
+      raise ValueError("Invalid loss function choice.")
+    
     return output

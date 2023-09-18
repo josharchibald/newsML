@@ -34,7 +34,7 @@ class news_data_processing():
       Outputs: news_data (json) '''
   def fetch_news_and_date(self, year, month):
     
-    ''' Put the api key and nothing else in a api_key.txt file'''
+    ''' Put the api key and nothing else in a news_api_key.txt file'''
     with open('news_api_key.txt', 'r') as f:
       key = f.read().strip()
 

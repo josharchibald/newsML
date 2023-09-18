@@ -202,7 +202,7 @@ class stock_data_processing():
         # same ie ratio of 1. Reasons for no price coulf be a holiday or 
         # disaster that caused markets to close. 
         ratio = 1
-
+    
     return ratio
 
   ''' This method takes in the news_df and the stock_df and uses the dates in
@@ -280,7 +280,7 @@ class stock_data_processing():
 
         ''' the percent profit is just the income - the investment over 
             investment '''
-        weekly_perc_profit.append((income - investment) / investment)
+        weekly_perc_profit.append(((income - investment) / investment) * 100)
       
       past_industry_profit.append(weekly_perc_profit)
 
@@ -357,7 +357,8 @@ class stock_data_processing():
       os.makedirs(sp500_profit_directory)
 
     past_sp500_performance = []
-
+    
+    ''' Fetching S&P 500 performance '''
     for date_index in tqdm(range(len(news_df['adjusted_date']) - 1)):
 
       start_date = news_df['adjusted_date'].iloc[date_index]
@@ -373,9 +374,9 @@ class stock_data_processing():
         income += self.calulate_price_ratio(start_date=start_date, \
                                             end_date=end_date, \
                                             ticker=ticker, \
-                                            combined_data=combined_data)        
+                                            combined_data=combined_data)      
 
-      past_sp500_performance.append((income - investment) / investment)
+      past_sp500_performance.append(((income - investment) / investment) * 100)
     
     sp500_profits = [past_sp500_performance[1:] + \
                 [past_sp500_performance[len(past_sp500_performance) - 1]]]
@@ -385,7 +386,7 @@ class stock_data_processing():
     # save to disk
     with h5py.File(f'{sp500_profit_directory}/sp500_profits.h5', 'w') as hf:
       # Create a dataset in the file
-      hf.create_dataset(f'stock_profits', \
+      hf.create_dataset(f'sp500_profits', \
                         data=sp500_profits)
 
     
