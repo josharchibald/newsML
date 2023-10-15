@@ -34,7 +34,7 @@ class stock_data_processing():
 
     tables = pd.read_html(url)
 
-    sp500_table = tables[0]
+    sp500_table = tables[0][:10]
 
     tickers = sp500_table['Symbol'].tolist()
 
@@ -217,11 +217,11 @@ class stock_data_processing():
       Outputs: H5 files '''
   def fetch_labels_industry_performance(self, news_df, stock_df, combined_data):
 
-    stock_inputs_directory = 'stock_inputs'
+    stock_inputs_directory = r'C:\Users\joshu\newsML\stock_inputs'
 
-    stock_labels_directory = 'stock_labels'
+    stock_labels_directory = r'C:\Users\joshu\newsML\stock_labels'
 
-    stock_profit_directory = 'stock_profits'
+    stock_profit_directory = r'C:\Users\joshu\newsML\stock_profits'
 
     if not os.path.exists(stock_inputs_directory):
       os.makedirs(stock_inputs_directory)
@@ -351,7 +351,7 @@ class stock_data_processing():
       Outputs: H5 files  '''
   def fetch_sp500_performance(self, news_df, sp500_tickers, combined_data):
 
-    sp500_profit_directory = 'sp500_profits'
+    sp500_profit_directory = r'C:\Users\joshu\newsML\sp500_profits'
 
     if not os.path.exists(sp500_profit_directory):
       os.makedirs(sp500_profit_directory)

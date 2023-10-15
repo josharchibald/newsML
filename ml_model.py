@@ -74,8 +74,8 @@ class ml_model(nn.Module):
 
     ''' Merging of branches '''
     self.merge_dim = self.calculate_merge_dim(self.sequence_length)
-    self.merge_layer = nn.Linear(self.merge_dim, self.merge_size) 
-
+    self.merge_layer = nn.Linear(self.merge_dim, self.merge_size)
+    self.norm_merge = nn.LayerNorm(self.merge_size)
     ''' Output Layer ''' 
     self.output_layer = nn.Linear(self.merge_size, self.output_size) 
 
@@ -187,6 +187,7 @@ class ml_model(nn.Module):
     # Merge the outputs of the Conv1D and Linear branches
     x_merged = torch.cat((x_conv, x_lin), dim=1)
     x_merged = self.merge_layer(x_merged)
+    x_merged = self.norm_merge(x_merged)
 
     # Final output layer
     output = self.output_layer(x_merged)

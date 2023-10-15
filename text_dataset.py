@@ -16,17 +16,22 @@ class text_dataset(Dataset):
       the class. '''
   def __init__(self):
     
-    self.text_files = 'news_inputs/text_data_input.h5'
+    self.text_files = r'C:\Users\joshu\newsML\news_inputs/text_data_input.h5'
 
-    self.keywords_files = 'news_inputs/keywords_data_input.h5'
+    self.keywords_files = \
+      r'C:\Users\joshu\newsML\news_inputs/keywords_data_input.h5'
 
-    self.stock_input_file = 'stock_inputs/stock_inputs.h5'
+    self.stock_input_file = \
+      r'C:\Users\joshu\newsML\stock_inputs/stock_inputs.h5'
 
-    self.stock_labels_file = 'stock_labels/stock_labels.h5'
+    self.stock_labels_file = \
+      r'C:\Users\joshu\newsML\stock_labels/stock_labels.h5'
 
-    self.stock_profits_file = 'stock_profits/stock_profits.h5'
+    self.stock_profits_file = \
+      r'C:\Users\joshu\newsML\stock_profits/stock_profits.h5'
 
-    self.sp500_profits_file = 'sp500_profits/sp500_profits.h5'
+    self.sp500_profits_file = \
+      r'C:\Users\joshu\newsML\sp500_profits/sp500_profits.h5'
     
     self.text_file_names = []
 

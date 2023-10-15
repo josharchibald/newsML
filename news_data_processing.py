@@ -21,6 +21,7 @@ import random
 class news_data_processing():
     
   def __init__(self):
+      self.max_tokens_global = 0
       
       ''' Cute message when object is made '''
       print('Starting News Data Processing')
@@ -33,9 +34,9 @@ class news_data_processing():
       
       Outputs: news_data (json) '''
   def fetch_news_and_date(self, year, month):
-    
+
     ''' Put the api key and nothing else in a news_api_key.txt file'''
-    with open('news_api_key.txt', 'r') as f:
+    with open(r'C:\Users\joshu\newsML\news_api_key.txt', 'r') as f:
       key = f.read().strip()
 
     base_url = 'https://api.nytimes.com/svc/archive/v1/'
@@ -173,19 +174,19 @@ class news_data_processing():
   
   ''' This method takes in a df and a column_name for the column the data is
       held and outputs the text data tokenized to zero padded 2D array inputs 
-      for each week. This method takes in a fraction so that a random fraction
-      of the data is used for the historical vocab to limit the features per 
+      for each week. This method takes in a number so that a random subset of 
+      size samples is used for the historical vocab to limit the features per 
       news article since if its not limited the inputs can easily fill up a
       computers disk storage.
       
-      Inputs: df (pd data frame), column_name (str), fraction (float)
+      Inputs: df (pd data frame), column_name (str), samples (int)
       
       Outputs: inputs_array (np array) '''
-  def tokenize(self, df, column_name, fraction):
+  def tokenize(self, df, column_name, samples):
 
     N = df[column_name].apply(len).max()
 
-    input_dir = 'news_inputs'
+    input_dir = r'C:\Users\joshu\newsML\news_inputs'
 
     if not os.path.exists(input_dir):
       os.makedirs(input_dir)
@@ -196,27 +197,43 @@ class news_data_processing():
 
     data_chunks = 0
 
-    sampled_df = df.sample(frac=fraction, random_state=random.randint(1, 1000)) 
-
-    historical_corpus = \
-    list(itertools.chain.from_iterable(sampled_df[column_name]))
-
-    vectorizer = TfidfVectorizer()
-    vectorizer.fit(historical_corpus)
-    base_vocab = vectorizer.get_feature_names_out()
-
     print(f'Tokenizing inputs for {column_name}')
+    if column_name == 'text':
+      print('Finding max tokens')
+      # First Pass - Determine max number of tokens across all weeks
+      for week_list in tqdm(df[column_name].iloc[:-1]):
+        # Each week, randomly sample a subset of articles from that week to form
+        # the historical corpus
+        week_sample = random.sample(week_list, min(samples, len(week_list)))
+        
+        # Fit a TfidfVectorizer on the week's sample to get the vocabulary for 
+        # this week
+        weekly_vectorizer = TfidfVectorizer()
+        weekly_vectorizer.fit(week_sample)
+        fixed_vocab = weekly_vectorizer.get_feature_names_out()
 
+        # Use the determined vocabulary to tokenize the entire week's data
+        weekly_vectorizer = TfidfVectorizer(vocabulary=fixed_vocab)
+        X = weekly_vectorizer.fit_transform(week_list)
+        max_tokens_this_week = X.shape[1]  # Just look at the number of columns
+        self.max_tokens_global = max(self.max_tokens_global, \
+                                    max_tokens_this_week)
+    print(f'Max tokens: {self.max_tokens_global}')
+    print(f'Max number of articles a week {N}')
+    print('Tokenizing')
     for week_list in tqdm(df[column_name].iloc[:-1]):
 
-      # Create a new TfidfVectorizer instance with the base vocabulary
-      weekly_vectorizer = TfidfVectorizer(vocabulary=base_vocab)
-
-      # Fit and transform the current week's headlines
+      # Tokenize the entire week's data using max_features
+      weekly_vectorizer = TfidfVectorizer(max_features=self.max_tokens_global)
       X = weekly_vectorizer.fit_transform(week_list)
-
-      # Convert the sparse matrix to a dense numpy array
       X_dense = X.toarray()
+
+      # Zero pad the columns to ensure all articles have max_tokens_global 
+      # features
+      padded_X_dense = np.zeros((X_dense.shape[0], self.max_tokens_global))
+      padded_X_dense[:, :X_dense.shape[1]] = X_dense
+
+      X_dense = padded_X_dense
 
       # Create and fit the scaler
       scaler = StandardScaler().fit(X_dense)
@@ -256,8 +273,7 @@ def main():
   weekdays = 0
   weeks = 1
 
-  # use only 50% of all data for the historical vocabulary
-  fraction = 1
+  samples = 50
 
   start_year = 2017
 
@@ -274,10 +290,10 @@ def main():
   grouped_keywords_data = news.group_by_weekday(df=keywords_df, \
                                                 weekday=weekdays, weeks=weeks)
   
-  news.tokenize(df=grouped_text_data, column_name='text', fraction=fraction)
+  news.tokenize(df=grouped_text_data, column_name='text', samples=samples)
 
   news.tokenize(df=grouped_keywords_data, \
-                                  column_name='keywords', fraction=fraction)
+                                  column_name='keywords', samples=samples)
 
   
 if __name__ == '__main__':
